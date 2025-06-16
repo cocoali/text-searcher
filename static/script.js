@@ -83,8 +83,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                     <h4><a href="${result.url}" target="_blank">${result.title}</a></h4>
                                     <p class="url">${result.url}</p>
                                     <div class="matches-section">
-                                        <p class="matches" onclick="toggleMatches(this)">マッチ数: ${result.matches} ▼</p>
-                                        <div class="matches-details" style="display: none;">
+                                        <p class="matches">マッチ数: ${result.matches}</p>
+                                        <div class="matches-details">
                                             ${result.body_matches.length > 0 ? `
                                                 <div class="match-section">
                                                     <h5>本文の一致</h5>

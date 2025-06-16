@@ -181,9 +181,12 @@ button:disabled {
 }
 
 .matches {
-  color: #28a745;
+  color: #4a90e2;
   font-weight: bold;
-  margin: 5px 0;
+  margin: 8px 0;
+  padding: 5px;
+  border-radius: 4px;
+  background-color: #f0f7ff;
 }
 
 .snippets {
@@ -681,21 +684,6 @@ mark {
   margin: 10px 0;
 }
 
-.matches {
-  color: #4a90e2;
-  font-weight: bold;
-  margin: 8px 0;
-  cursor: pointer;
-  padding: 5px;
-  border-radius: 4px;
-  background-color: #f0f7ff;
-  transition: background-color 0.2s;
-}
-
-.matches:hover {
-  background-color: #e0f0ff;
-}
-
 .matches-details {
   margin-top: 10px;
   padding: 10px;
@@ -704,7 +692,7 @@ mark {
 }
 
 .match-section {
-  margin: 10px 0;
+  margin: 15px 0;
 }
 
 .match-section h5 {
@@ -712,15 +700,18 @@ mark {
   margin: 0 0 8px 0;
   font-size: 0.9em;
   font-weight: bold;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #ddd;
 }
 
 .match {
-  margin: 5px 0;
-  padding: 8px;
+  margin: 8px 0;
+  padding: 10px;
   background-color: white;
   border-radius: 4px;
   font-size: 0.9em;
   line-height: 1.5;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .match a {
