@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 from functools import wraps
 import hashlib
 import redis
+from limits.storage import RedisStorage, MemoryStorage
 from dotenv import load_dotenv
 
 # 環境変数の読み込み
@@ -22,14 +23,26 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))
 
 # Redisの設定
-redis_url = os.environ.get('REDIS_URL', 'redis://localhost:6379')
-redis_client = redis.from_url(redis_url)
+redis_url = os.environ.get('REDIS_URL')
+storage_backend = None
+
+if redis_url:
+    try:
+        redis_client = redis.from_url(redis_url)
+        redis_client.ping()  # 接続テスト
+        storage_backend = RedisStorage(redis_url)
+    except (redis.ConnectionError, redis.exceptions.ConnectionError):
+        print("Warning: Redis connection failed, falling back to in-memory storage")
+        storage_backend = MemoryStorage()
+else:
+    print("Warning: REDIS_URL not set, using in-memory storage")
+    storage_backend = MemoryStorage()
 
 # レート制限の設定
 limiter = Limiter(
     app=app,
     key_func=get_remote_address,
-    storage_uri=redis_url,
+    storage=storage_backend,
     default_limits=["200 per day", "50 per hour"]
 )
 

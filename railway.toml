@@ -7,4 +7,7 @@ startCommand = "gunicorn -c gunicorn.conf.py app:app"
 healthcheckPath = "/"
 healthcheckTimeout = 100
 restartPolicyType = "ON_FAILURE"
-restartPolicyMaxRetries = 3 
+restartPolicyMaxRetries = 3
+
+[deploy.env]
+PYTHON_VERSION = "3.9" 
