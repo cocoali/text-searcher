@@ -299,7 +299,7 @@ def search():
         
         # 前回の検索結果を取得
         previous_results = None
-        if is_research and history:
+        if is_research and history and isinstance(history, list) and len(history) > 0:
             previous_results = history[0]  # 最新の検索結果
         
         # 検索を実行
@@ -331,10 +331,16 @@ def search():
                 # href_matchesの各要素が辞書であることを保証し、リンクテキストとURLをセット
                 href_snippets = []
                 for h in href_matches:
-                    if isinstance(h, dict):
-                        text = h.get('text', '')
-                        url = h.get('original_url', h.get('href', ''))
-                        href_snippets.append({'text': text, 'url': url})
+                    try:
+                        if isinstance(h, dict):
+                            text = h.get('text', '')
+                            url = h.get('original_url', h.get('href', ''))
+                            href_snippets.append({'text': text, 'url': url})
+                        elif isinstance(h, str):
+                            href_snippets.append({'text': h, 'url': h})
+                    except Exception as e:
+                        print(f"href_matchの処理中にエラー: {str(e)}")
+                        continue
                 
                 formatted_results.append({
                     'url': result.get('url', ''),
