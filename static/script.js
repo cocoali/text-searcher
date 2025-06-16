@@ -49,14 +49,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     html += `<div class="info">前回の検索でスキップされた${data.skipped_count}件のURLを検索しました。</div>`;
                 }
                 
-                // 検索統計情報を表示
-                html += `
-                    <div class="search-stats">
-                        <p>検索対象URL数: ${data.total_pages ?? 0}件</p>
-                        <p>検索結果数: ${data.results?.length ?? 0}件</p>
-                    </div>
-                `;
-                
                 if (data.results.length === 0) {
                     html += '<div class="no-results">検索結果が見つかりませんでした。</div>';
                 } else {
@@ -70,6 +62,14 @@ document.addEventListener('DOMContentLoaded', function () {
                         `;
                     });
                 }
+                
+                // 検索統計情報を安全に表示
+                html += `
+                    <div class="search-stats">
+                        <p>検索対象URL数: ${typeof data.total_pages === 'number' ? data.total_pages : 0}件</p>
+                        <p>検索結果数: ${Array.isArray(data.results) ? data.results.length : 0}件</p>
+                    </div>
+                `;
                 
                 resultsDiv.innerHTML = html;
                 
