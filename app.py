@@ -197,6 +197,7 @@ class WebTextSearcher:
             page_results = {
                 'url': url,
                 'title': soup.find('title').get_text() if soup.find('title') else url,
+                'depth': depth,  # 階層情報を追加
                 'body_matches': [],
                 'head_matches': [],
                 'href_matches': []
@@ -333,6 +334,7 @@ def search():
                 formatted_results.append({
                     'url': result.get('url', ''),
                     'title': result.get('title', '') or result.get('url', ''),
+                    'depth': result.get('depth', 0),  # 階層情報を追加
                     'matches': match_count,
                     'body_matches': body_matches,
                     'head_matches': head_matches,

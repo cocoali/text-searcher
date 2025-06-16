@@ -52,40 +52,43 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (data.results.length === 0) {
                     html += '<div class="no-results">検索結果が見つかりませんでした。</div>';
                 } else {
+                    // 階層ごとに結果をグループ化
+                    const resultsByDepth = {};
                     data.results.forEach(result => {
-                        html += `<div class="result-item">`;
-                        html += `<h3><a href="${result.url}" target="_blank">${result.title || result.url}</a></h3>`;
-                        html += `<p class="url">${result.url}</p>`;
-                        if (result.body_matches && result.body_matches.length > 0) {
-                            html += '<div class="result-section body-matches"><h4>本文の一致</h4>';
-                            result.body_matches.forEach(match => {
-                                html += `<div class="match">${match}</div>`;
-                            });
-                            html += '</div>';
+                        const depth = result.depth || 0;
+                        if (!resultsByDepth[depth]) {
+                            resultsByDepth[depth] = [];
                         }
-                        if (result.head_matches && result.head_matches.length > 0) {
-                            html += '<div class="result-section head-matches"><h4>headタグ内の一致</h4>';
-                            result.head_matches.forEach(match => {
-                                html += `<div class="match">${match}</div>`;
-                            });
-                            html += '</div>';
-                        }
-                        if (result.href_matches && result.href_matches.length > 0) {
-                            html += '<div class="result-section href-matches"><h4>リンクの一致</h4>';
-                            result.href_matches.forEach(match => {
-                                html += `<div class="match"><a href="${match.url}" target="_blank">${match.text || match.url}</a></div>`;
-                            });
-                            html += '</div>';
-                        }
-                        html += '</div>';
+                        resultsByDepth[depth].push(result);
+                    });
+
+                    // 階層ごとに結果を表示
+                    Object.keys(resultsByDepth).sort((a, b) => Number(a) - Number(b)).forEach(depth => {
+                        const results = resultsByDepth[depth];
+                        html += `<div class="depth-section">
+                            <h3>階層 ${depth}</h3>
+                            <div class="results-grid">`;
+                        
+                        results.forEach(result => {
+                            html += `
+                                <div class="result-item">
+                                    <h4><a href="${result.url}" target="_blank">${result.title}</a></h4>
+                                    <p class="url">${result.url}</p>
+                                    <p class="matches">マッチ数: ${result.matches}</p>
+                                    ${result.snippets.map(snippet => `<div class="snippet">${snippet}</div>`).join('')}
+                                </div>
+                            `;
+                        });
+                        
+                        html += `</div></div>`;
                     });
                 }
                 
-                // 検索統計情報を安全に表示
+                // 検索統計情報を表示
                 html += `
                     <div class="search-stats">
-                        <p>検索対象URL数: ${typeof data.total_pages === 'number' ? data.total_pages : 0}件</p>
-                        <p>検索結果数: ${Array.isArray(data.results) ? data.results.length : 0}件</p>
+                        <p>検索対象URL数: ${data.total_pages}件</p>
+                        <p>検索結果数: ${data.results.length}件</p>
                     </div>
                 `;
                 
