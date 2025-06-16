@@ -15,6 +15,15 @@ import hashlib
 import redis
 from limits.storage import RedisStorage, MemoryStorage
 from dotenv import load_dotenv
+import sys
+import logging
+
+# ロギングの設定
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
 
 # 環境変数の読み込み
 load_dotenv()
@@ -22,29 +31,40 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))
 
+# デバッグモードの設定
+app.debug = os.environ.get('FLASK_ENV') == 'development'
+
 # Redisの設定
 redis_url = os.environ.get('REDIS_URL')
 storage_backend = None
 
 if redis_url:
     try:
+        logging.info(f"Attempting to connect to Redis at {redis_url.split('@')[-1]}")
         redis_client = redis.from_url(redis_url)
-        redis_client.ping()  # 接続テスト
+        redis_client.ping()
         storage_backend = RedisStorage(redis_url)
-    except (redis.ConnectionError, redis.exceptions.ConnectionError):
-        print("Warning: Redis connection failed, falling back to in-memory storage")
+        logging.info("Successfully connected to Redis")
+    except (redis.ConnectionError, redis.exceptions.ConnectionError) as e:
+        logging.warning(f"Redis connection failed: {str(e)}")
+        logging.warning("Falling back to in-memory storage")
         storage_backend = MemoryStorage()
 else:
-    print("Warning: REDIS_URL not set, using in-memory storage")
+    logging.warning("REDIS_URL not set, using in-memory storage")
     storage_backend = MemoryStorage()
 
 # レート制限の設定
-limiter = Limiter(
-    app=app,
-    key_func=get_remote_address,
-    storage=storage_backend,
-    default_limits=["200 per day", "50 per hour"]
-)
+try:
+    limiter = Limiter(
+        app=app,
+        key_func=get_remote_address,
+        storage=storage_backend,
+        default_limits=["200 per day", "50 per hour"]
+    )
+    logging.info("Rate limiter initialized successfully")
+except Exception as e:
+    logging.error(f"Failed to initialize rate limiter: {str(e)}")
+    raise
 
 # タイムアウトを設定
 app.config['TIMEOUT'] = int(os.environ.get('TIMEOUT', 120))
@@ -456,6 +476,15 @@ def ratelimit_handler(e):
         'success': False,
         'error': 'リクエストが多すぎます。しばらく待ってから再試行してください。'
     }), 429
+
+@app.errorhandler(500)
+def internal_error(error):
+    logging.error(f"Internal Server Error: {str(error)}")
+    return jsonify({'error': 'Internal Server Error', 'details': str(error)}), 500
+
+@app.route('/health')
+def health_check():
+    return jsonify({'status': 'healthy'}), 200
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
