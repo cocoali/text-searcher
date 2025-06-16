@@ -29,8 +29,8 @@ class WebTextSearcher:
     def __init__(self):
         self.timeout = 30  # タイムアウトを30秒に延長
         self.visited_urls = set()
-        self.max_depth = 1  # 検索深度を1に制限してパフォーマンス向上
-        self.max_pages = 10  # 最大ページ数を制限
+        self.max_depth = 3  # 検索深度を3に増加
+        self.max_pages = 50  # 最大ページ数を50に増加
 
     def _highlight_text(self, text, search_text):
         """検索テキストをハイライト表示"""
