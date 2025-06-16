@@ -676,3 +676,64 @@ mark {
   padding: 2px 4px;
   border-radius: 2px;
 }
+
+.matches-section {
+  margin: 10px 0;
+}
+
+.matches {
+  color: #4a90e2;
+  font-weight: bold;
+  margin: 8px 0;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 4px;
+  background-color: #f0f7ff;
+  transition: background-color 0.2s;
+}
+
+.matches:hover {
+  background-color: #e0f0ff;
+}
+
+.matches-details {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+
+.match-section {
+  margin: 10px 0;
+}
+
+.match-section h5 {
+  color: #666;
+  margin: 0 0 8px 0;
+  font-size: 0.9em;
+  font-weight: bold;
+}
+
+.match {
+  margin: 5px 0;
+  padding: 8px;
+  background-color: white;
+  border-radius: 4px;
+  font-size: 0.9em;
+  line-height: 1.5;
+}
+
+.match a {
+  color: #4a90e2;
+  text-decoration: none;
+}
+
+.match a:hover {
+  text-decoration: underline;
+}
+
+.match mark {
+  background-color: #ffd700;
+  padding: 2px 4px;
+  border-radius: 2px;
+}

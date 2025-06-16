@@ -197,7 +197,7 @@ class WebTextSearcher:
             page_results = {
                 'url': url,
                 'title': soup.find('title').get_text() if soup.find('title') else url,
-                'depth': depth,  # 階層情報を追加
+                'depth': depth,
                 'body_matches': [],
                 'head_matches': [],
                 'href_matches': []
@@ -255,7 +255,12 @@ class WebTextSearcher:
             
             # マッチがある場合のみ結果に追加
             if any([page_results['body_matches'], page_results['head_matches'], page_results['href_matches']]):
-                results.append(page_results)
+                # 同じURLの結果が既に存在する場合は、より深い階層の結果を優先
+                existing_result = next((r for r in results if r['url'] == url), None)
+                if existing_result is None or existing_result['depth'] > depth:
+                    if existing_result is not None:
+                        results.remove(existing_result)
+                    results.append(page_results)
             
             # 次の階層のリンクを取得
             if depth < self.max_depth:

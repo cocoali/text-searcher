@@ -74,8 +74,33 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <div class="result-item">
                                     <h4><a href="${result.url}" target="_blank">${result.title}</a></h4>
                                     <p class="url">${result.url}</p>
-                                    <p class="matches">マッチ数: ${result.matches}</p>
-                                    ${result.snippets.map(snippet => `<div class="snippet">${snippet}</div>`).join('')}
+                                    <div class="matches-section">
+                                        <p class="matches" onclick="toggleMatches(this)">マッチ数: ${result.matches} ▼</p>
+                                        <div class="matches-details" style="display: none;">
+                                            ${result.body_matches.length > 0 ? `
+                                                <div class="match-section">
+                                                    <h5>本文の一致</h5>
+                                                    ${result.body_matches.map(match => `<div class="match">${match}</div>`).join('')}
+                                                </div>
+                                            ` : ''}
+                                            ${result.head_matches.length > 0 ? `
+                                                <div class="match-section">
+                                                    <h5>ヘッダーの一致</h5>
+                                                    ${result.head_matches.map(match => `<div class="match">${match}</div>`).join('')}
+                                                </div>
+                                            ` : ''}
+                                            ${result.href_matches.length > 0 ? `
+                                                <div class="match-section">
+                                                    <h5>リンクの一致</h5>
+                                                    ${result.href_matches.map(match => `
+                                                        <div class="match">
+                                                            <a href="${match.url}" target="_blank">${match.text}</a>
+                                                        </div>
+                                                    `).join('')}
+                                                </div>
+                                            ` : ''}
+                                        </div>
+                                    </div>
                                 </div>
                             `;
                         });
@@ -290,6 +315,14 @@ document.addEventListener('DOMContentLoaded', function () {
         
         // 検索を実行
         searchForm.dispatchEvent(new Event('submit'));
+    }
+
+    // マッチ詳細の表示/非表示を切り替える関数
+    function toggleMatches(element) {
+        const details = element.nextElementSibling;
+        const isHidden = details.style.display === 'none';
+        details.style.display = isHidden ? 'block' : 'none';
+        element.textContent = `マッチ数: ${element.textContent.split(':')[1].trim().split(' ')[0]} ${isHidden ? '▲' : '▼'}`;
     }
 });
 
