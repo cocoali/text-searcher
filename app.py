@@ -13,7 +13,7 @@ app = Flask(__name__)
 
 # セキュリティ設定
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-here')
-app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_SECURE'] = os.environ.get('FLASK_ENV') == 'production'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['PERMANENT_SESSION_LIFETIME'] = 1800  # 30分
 
@@ -74,7 +74,9 @@ class WebTextSearcher:
         
         try:
             # ページを取得
-            headers = {}
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
             if auth:
                 auth_str = f"{auth['username']}:{auth['password']}"
                 auth_bytes = auth_str.encode('ascii')
