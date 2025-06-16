@@ -27,10 +27,14 @@ limiter = Limiter(
 
 class WebTextSearcher:
     def __init__(self):
-        self.timeout = 30  # タイムアウトを30秒に延長
+        self.timeout = 10  # タイムアウトを10秒に短縮
         self.visited_urls = set()
-        self.max_depth = 3  # 検索深度を3に増加
-        self.max_pages = 50  # 最大ページ数を50に増加
+        self.max_depth = 2  # 検索深度を2に調整
+        self.max_pages = 30  # 最大ページ数を30に調整
+        self.session = requests.Session()
+        self.session.headers.update({
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        })
 
     def _highlight_text(self, text, search_text):
         """検索テキストをハイライト表示"""
@@ -87,7 +91,7 @@ class WebTextSearcher:
                 base64_bytes = base64.b64encode(auth_bytes)
                 headers['Authorization'] = f"Basic {base64_bytes.decode('ascii')}"
             
-            response = requests.get(url, timeout=self.timeout, headers=headers)
+            response = self.session.get(url, timeout=self.timeout, headers=headers)
             response.raise_for_status()
             soup = BeautifulSoup(response.text, 'html.parser')
             
