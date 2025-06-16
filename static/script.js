@@ -14,103 +14,68 @@ document.addEventListener('DOMContentLoaded', function () {
 
     searchForm.addEventListener('submit', async function (e) {
         e.preventDefault();
-
+        
         const url = document.getElementById('url').value;
         const searchText = document.getElementById('search_text').value;
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
-
-        if (!url || !searchText) {
-            alert('URLと検索テキストを入力してください');
-            return;
-        }
-
-        // 現在のURLと検索テキストを保存
-        currentUrl = url;
-        currentSearchText = searchText;
-
+        const isResearch = searchBtn.textContent.includes('再検索');
+        
+        // ローディング表示
+        searchBtn.disabled = true;
+        searchBtn.textContent = '検索中...';
+        resultsDiv.innerHTML = '<div class="loading">検索中...</div>';
+        
         try {
-            loadingDiv.style.display = 'block';
-            searchBtn.disabled = true;
-            resultsDiv.innerHTML = '<p>検索中...</p>';
-
-            const formData = new FormData();
-            formData.append('url', url);
-            formData.append('search_text', searchText);
-            if (username) formData.append('username', username);
-            if (password) formData.append('password', password);
-
             const response = await fetch('/search', {
                 method: 'POST',
-                body: formData
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    url: url,
+                    search_text: searchText,
+                    is_research: isResearch
+                })
             });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
+            
             const data = await response.json();
-
-            if (data.success) {
-                let html = '<h2>検索結果</h2>';
-                if (data.skipped_urls > 0) {
-                    html += `<p class="search-info">既に検索済みのURL数: ${data.skipped_urls}</p>`;
-                    searchBtn.textContent = '🔍 未検索ページを検索';
-                } else {
-                    searchBtn.textContent = '🔍 検索';
+            
+            if (data.error) {
+                resultsDiv.innerHTML = `<div class="error">${data.error}</div>`;
+            } else {
+                // 検索結果を表示
+                let html = '';
+                
+                if (data.is_research && data.skipped_count > 0) {
+                    html += `<div class="info">前回の検索でスキップされた${data.skipped_count}件のURLを検索しました。</div>`;
                 }
-                html += `<p class="search-info">今回検索したURL数: ${data.total_visited - data.skipped_urls}</p>`;
-                html += `<p class="search-info">合計検索URL数: ${data.total_visited}</p>`;
                 
                 if (data.results.length === 0) {
                     html += '<div class="no-results">検索結果が見つかりませんでした。</div>';
                 } else {
+                    html += `<div class="results-summary">検索結果: ${data.results.length}件</div>`;
                     data.results.forEach(result => {
                         html += `
                             <div class="result-item">
-                                <h3><a href="${result.url}" target="_blank">${result.title || result.url}</a></h3>
-                                <p class="url">${result.url}</p>
-                                ${result.body_matches.length > 0 ? `
-                                    <div class="result-section body-matches">
-                                        <h4>本文の一致</h4>
-                                        ${result.body_matches.map(match => `<div class="match">${match}</div>`).join('')}
-                                    </div>
-                                ` : ''}
-                                ${result.head_matches.length > 0 ? `
-                                    <div class="result-section head-matches">
-                                        <h4>ヘッダーの一致</h4>
-                                        ${result.head_matches.map(match => `<div class="match">${match}</div>`).join('')}
-                                    </div>
-                                ` : ''}
-                                ${result.href_matches.length > 0 ? `
-                                    <div class="result-section href-matches">
-                                        <h4>リンクの一致</h4>
-                                        ${result.href_matches.map(match => `
-                                            <div class="href-match">
-                                                <div class="link-text">${match.text}</div>
-                                                <a href="${match.href}" target="_blank">${match.href}</a>
-                                            </div>
-                                        `).join('')}
-                                    </div>
-                                ` : ''}
+                                <h3><a href="${result.url}" target="_blank">${result.title}</a></h3>
+                                <p>マッチ数: ${result.matches}</p>
+                                ${result.snippets.map(snippet => `<div class="snippet">${snippet}</div>`).join('')}
                             </div>
                         `;
                     });
                 }
+                
                 resultsDiv.innerHTML = html;
-
-                // 検索履歴を更新
-                if (data.history) {
-                    updateSearchHistory(data.history, searchText);
+                
+                // 検索ボタンのテキストを更新
+                if (data.is_research) {
+                    searchBtn.textContent = '🔍 未検索ページを検索';
+                } else {
+                    searchBtn.textContent = '🔍 検索';
                 }
-            } else {
-                resultsDiv.innerHTML = `<div class="error">エラー: ${data.error}</div>`;
             }
         } catch (error) {
-            console.error('エラー発生:', error);
             resultsDiv.innerHTML = `<div class="error">エラーが発生しました: ${error.message}</div>`;
         } finally {
-            loadingDiv.style.display = 'none';
             searchBtn.disabled = false;
         }
     });

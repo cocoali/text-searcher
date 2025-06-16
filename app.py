@@ -278,32 +278,84 @@ class WebTextSearcher:
 @login_required
 @limiter.limit("10 per minute")
 def search():
-    print("検索リクエストを受信")
+    """検索を実行"""
     url = request.form.get('url')
     search_text = request.form.get('search_text')
-    username = request.form.get('username')
-    password = request.form.get('password')
-    
-    print(f"リクエストパラメータ: URL={url}, 検索テキスト={search_text}")
+    is_research = request.form.get('is_research') == 'true'
     
     if not url or not search_text:
-        print("パラメータが不足")
-        return jsonify({
-            'success': False,
-            'error': 'URLと検索テキストを入力してください'
-        })
+        return jsonify({'error': 'URLと検索テキストを入力してください。'})
     
-    auth = None
-    if username and password:
-        auth = {
-            'username': username,
-            'password': password
-        }
+    try:
+        # 検索履歴を読み込む
+        try:
+            with open('search_history.json', 'r', encoding='utf-8') as f:
+                history = json.load(f)
+        except FileNotFoundError:
+            history = []
+        
+        # 前回の検索結果を取得
+        previous_results = None
+        if is_research and history:
+            previous_results = history[0]  # 最新の検索結果
+        
+        # 検索を実行
+        searcher = WebTextSearcher()
+        results = searcher.search(url, search_text)
+        
+        if results['success']:
+            # 検索結果を整形
+            formatted_results = []
+            for result in results['results']:
+                formatted_results.append({
+                    'url': result['url'],
+                    'title': result['title'],
+                    'matches': result['matches'],
+                    'snippets': result['snippets']
+                })
+            
+            # 検索履歴に追加
+            history_entry = {
+                'search_text': search_text,
+                'base_url': url,
+                'results': formatted_results,
+                'total_urls': results['total_pages'],
+                'total_results': len(formatted_results),
+                'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'is_research': is_research
+            }
+            
+            # 前回の検索結果がある場合、未検索のURLを追加
+            if is_research and previous_results:
+                previous_urls = {result['url'] for result in previous_results['results']}
+                new_urls = {result['url'] for result in formatted_results}
+                skipped_urls = previous_urls - new_urls
+                
+                if skipped_urls:
+                    history_entry['skipped_urls'] = list(skipped_urls)
+                    history_entry['skipped_count'] = len(skipped_urls)
+            
+            # 履歴を更新
+            history.insert(0, history_entry)
+            
+            # 履歴を保存（最新の10件のみ保持）
+            with open('search_history.json', 'w', encoding='utf-8') as f:
+                json.dump(history[:10], f, ensure_ascii=False, indent=2)
+            
+            return jsonify({
+                'success': True,
+                'results': formatted_results,
+                'total_pages': results['total_pages'],
+                'total_results': len(formatted_results),
+                'is_research': is_research,
+                'skipped_urls': history_entry.get('skipped_urls', []),
+                'skipped_count': history_entry.get('skipped_count', 0)
+            })
+        else:
+            return jsonify({'error': results['error']})
     
-    searcher = WebTextSearcher()
-    result = searcher.search(url, search_text, auth)
-    print(f"検索結果: {result}")
-    return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)})
 
 @app.route('/search_history', methods=['GET'])
 @login_required
