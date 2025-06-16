@@ -8,6 +8,8 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import base64
 import os
+import json
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -27,14 +29,32 @@ limiter = Limiter(
 
 class WebTextSearcher:
     def __init__(self):
-        self.timeout = 10  # タイムアウトを10秒に短縮
+        self.timeout = 10
         self.visited_urls = set()
-        self.max_depth = 2  # 検索深度を2に調整
-        self.max_pages = 30  # 最大ページ数を30に調整
+        self.max_depth = 2
+        self.max_pages = 30
         self.session = requests.Session()
         self.session.headers.update({
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         })
+        self.history_file = 'search_history.json'
+        self.load_history()
+
+    def load_history(self):
+        """検索履歴を読み込む"""
+        if os.path.exists(self.history_file):
+            try:
+                with open(self.history_file, 'r', encoding='utf-8') as f:
+                    self.search_history = json.load(f)
+            except:
+                self.search_history = {}
+        else:
+            self.search_history = {}
+
+    def save_history(self):
+        """検索履歴を保存"""
+        with open(self.history_file, 'w', encoding='utf-8') as f:
+            json.dump(self.search_history, f, ensure_ascii=False, indent=2)
 
     def _highlight_text(self, text, search_text):
         """検索テキストをハイライト表示"""
@@ -48,17 +68,31 @@ class WebTextSearcher:
         except:
             return False
 
-    def search(self, url, search_text, auth=None):
+    def search(self, url, search_text, auth=None, skip_visited=True):
         """指定されたURLから検索を開始"""
         print(f"検索開始: URL={url}, 検索テキスト={search_text}")
         self.visited_urls = set()
         results = []
         
+        # 検索履歴から既に検索済みのURLを取得
+        if skip_visited and search_text in self.search_history:
+            self.visited_urls.update(self.search_history[search_text])
+            print(f"既に検索済みのURL数: {len(self.visited_urls)}")
+        
         try:
             self._search_page(url, search_text, depth=0, results=results, auth=auth)
+            
+            # 検索履歴を更新
+            if search_text not in self.search_history:
+                self.search_history[search_text] = []
+            self.search_history[search_text].extend(list(self.visited_urls))
+            self.save_history()
+            
             return {
                 'success': True,
-                'results': results
+                'results': results,
+                'total_visited': len(self.visited_urls),
+                'skipped_urls': len(self.visited_urls) if skip_visited else 0
             }
         except Exception as e:
             print(f"検索中にエラー: {str(e)}")

@@ -48,40 +48,47 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (data.success) {
                 let html = '<h2>検索結果</h2>';
-
+                if (data.skipped_urls > 0) {
+                    html += `<p class="search-info">既に検索済みのURL数: ${data.skipped_urls}</p>`;
+                }
+                html += `<p class="search-info">今回検索したURL数: ${data.total_visited - data.skipped_urls}</p>`;
+                html += `<p class="search-info">合計検索URL数: ${data.total_visited}</p>`;
+                
                 if (data.results.length === 0) {
-                    html += '<p>検索結果が見つかりませんでした。</p>';
+                    html += '<div class="no-results">検索結果が見つかりませんでした。</div>';
                 } else {
                     data.results.forEach(result => {
-                        html += `<div class="result-item">`;
-                        html += `<h3><a href="${result.url}" target="_blank">${result.url}</a></h3>`;
-
-                        if (result.body_matches && result.body_matches.length > 0) {
-                            html += '<h4>本文の一致:</h4>';
-                            result.body_matches.forEach(match => {
-                                html += `<p>${match}</p>`;
-                            });
-                        }
-
-                        if (result.head_matches && result.head_matches.length > 0) {
-                            html += '<h4>headタグ内の一致:</h4>';
-                            result.head_matches.forEach(match => {
-                                html += `<p>${match}</p>`;
-                            });
-                        }
-
-                        if (result.href_matches && result.href_matches.length > 0) {
-                            html += '<h4>リンクの一致:</h4>';
-                            result.href_matches.forEach(match => {
-                                html += `<p>テキスト: ${match.text}</p>`;
-                                html += `<p>リンク: <a href="${match.href}" target="_blank">${match.href}</a></p>`;
-                            });
-                        }
-
-                        html += '</div>';
+                        html += `
+                            <div class="result-item">
+                                <h3><a href="${result.url}" target="_blank">${result.title || result.url}</a></h3>
+                                <p class="url">${result.url}</p>
+                                ${result.body_matches.length > 0 ? `
+                                    <div class="result-section body-matches">
+                                        <h4>本文の一致</h4>
+                                        ${result.body_matches.map(match => `<div class="match">${match}</div>`).join('')}
+                                    </div>
+                                ` : ''}
+                                ${result.head_matches.length > 0 ? `
+                                    <div class="result-section head-matches">
+                                        <h4>ヘッダーの一致</h4>
+                                        ${result.head_matches.map(match => `<div class="match">${match}</div>`).join('')}
+                                    </div>
+                                ` : ''}
+                                ${result.href_matches.length > 0 ? `
+                                    <div class="result-section href-matches">
+                                        <h4>リンクの一致</h4>
+                                        ${result.href_matches.map(match => `
+                                            <div class="href-match">
+                                                <div class="link-text">${match.text}</div>
+                                                <a href="${match.href}" target="_blank">${match.href}</a>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `;
                     });
                 }
-
                 resultsDiv.innerHTML = html;
             } else {
                 resultsDiv.innerHTML = `<p class="error">エラー: ${data.error}</p>`;
