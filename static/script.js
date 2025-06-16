@@ -6,6 +6,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const spinner = document.getElementById('loadingSpinner');
     const loadingDiv = document.getElementById('loading');
     const searchHistoryDiv = document.getElementById('searchHistory');
+    const maxDepthInput = document.getElementById('max_depth');
+    const maxPagesInput = document.getElementById('max_pages');
     let currentSearchText = '';
     let currentUrl = '';
 
@@ -18,6 +20,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const url = document.getElementById('url').value;
         const searchText = document.getElementById('search_text').value;
         const isResearch = searchBtn.textContent.includes('再検索');
+        
+        const maxDepth = maxDepthInput ? maxDepthInput.value : '';
+        const maxPages = maxPagesInput ? maxPagesInput.value : '';
         
         // ローディング表示
         searchBtn.disabled = true;
@@ -33,7 +38,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 body: new URLSearchParams({
                     url: url,
                     search_text: searchText,
-                    is_research: isResearch
+                    is_research: isResearch,
+                    max_depth: maxDepth,
+                    max_pages: maxPages
                 })
             });
             
@@ -53,13 +60,37 @@ document.addEventListener('DOMContentLoaded', function () {
                     html += '<div class="no-results">検索結果が見つかりませんでした。</div>';
                 } else {
                     data.results.forEach(result => {
-                        html += `
-                            <div class="result-item">
-                                <h3><a href="${result.url}" target="_blank">${result.title}</a></h3>
-                                <p>マッチ数: ${result.matches ?? 0}</p>
-                                ${result.snippets.map(snippet => `<div class="snippet">${snippet}</div>`).join('')}
-                            </div>
-                        `;
+                        html += `<div class="result-item">`;
+                        html += `<h3><a href="${result.url}" target="_blank">${result.title || result.url}</a></h3>`;
+                        if (result.snippets && result.snippets.length > 0) {
+                            html += `<div class="snippets">`;
+                            result.snippets.forEach(snippet => {
+                                html += `<div class="snippet">${snippet}</div>`;
+                            });
+                            html += `</div>`;
+                        }
+                        if (result.body_matches && result.body_matches.length > 0) {
+                            html += '<div class="result-section body-matches"><h4>本文の一致</h4>';
+                            result.body_matches.forEach(match => {
+                                html += `<div class="match">${match}</div>`;
+                            });
+                            html += '</div>';
+                        }
+                        if (result.head_matches && result.head_matches.length > 0) {
+                            html += '<div class="result-section head-matches"><h4>headタグ内の一致</h4>';
+                            result.head_matches.forEach(match => {
+                                html += `<div class="match">${match}</div>`;
+                            });
+                            html += '</div>';
+                        }
+                        if (result.href_matches && result.href_matches.length > 0) {
+                            html += '<div class="result-section href-matches"><h4>リンクの一致</h4>';
+                            result.href_matches.forEach(match => {
+                                html += `<div class="match"><a href="${match.original_url}" target="_blank">${match.text || match.original_url}</a></div>`;
+                            });
+                            html += '</div>';
+                        }
+                        html += '</div>';
                     });
                 }
                 

@@ -39,6 +39,16 @@
                 <input type="password" id="password" name="password">
             </div>
 
+            <div class="form-group">
+                <label for="max_depth">最大階層（オプション）:</label>
+                <input type="number" id="max_depth" name="max_depth" min="1" max="10" value="2">
+            </div>
+
+            <div class="form-group">
+                <label for="max_pages">最大ページ数（オプション）:</label>
+                <input type="number" id="max_pages" name="max_pages" min="1" max="200" value="50">
+            </div>
+
             <button type="submit" id="searchBtn">検索</button>
         </form>
 

@@ -279,6 +279,8 @@ def search():
     url = request.form.get('url')
     search_text = request.form.get('search_text')
     is_research = request.form.get('is_research') == 'true'
+    max_depth = request.form.get('max_depth', type=int)
+    max_pages = request.form.get('max_pages', type=int)
     
     if not url or not search_text:
         return jsonify({'error': 'URLと検索テキストを入力してください。'})
@@ -298,6 +300,10 @@ def search():
         
         # 検索を実行
         searcher = WebTextSearcher()
+        if max_depth:
+            searcher.max_depth = max_depth
+        if max_pages:
+            searcher.max_pages = max_pages
         results = searcher.search(url, search_text)
         
         if results['success']:
