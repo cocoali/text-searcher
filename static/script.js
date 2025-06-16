@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const loadingDiv = document.getElementById('loading');
     const searchHistoryDiv = document.getElementById('searchHistory');
     let currentSearchText = '';
+    let currentUrl = '';
 
     // 検索履歴を読み込む
     loadSearchHistory();
@@ -23,6 +24,10 @@ document.addEventListener('DOMContentLoaded', function () {
             alert('URLと検索テキストを入力してください');
             return;
         }
+
+        // 現在のURLと検索テキストを保存
+        currentUrl = url;
+        currentSearchText = searchText;
 
         try {
             loadingDiv.style.display = 'block';
@@ -45,13 +50,12 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             const data = await response.json();
-            currentSearchText = searchText;
 
             if (data.success) {
                 let html = '<h2>検索結果</h2>';
                 if (data.skipped_urls > 0) {
                     html += `<p class="search-info">既に検索済みのURL数: ${data.skipped_urls}</p>`;
-                    searchBtn.textContent = '🔍 再検索';
+                    searchBtn.textContent = '🔍 未検索ページを検索';
                 } else {
                     searchBtn.textContent = '🔍 検索';
                 }
@@ -261,21 +265,25 @@ document.addEventListener('DOMContentLoaded', function () {
                         <div class="history-item">
                             <h3>検索テキスト: ${searchText}</h3>
                             <p>検索済みURL数: ${urls.length}</p>
-                            <button onclick="reuseSearch('${searchText}')" class="reuse-btn">この検索を再利用</button>
+                            <button class="reuse-btn" data-search-text="${searchText}">この検索を再利用</button>
                         </div>
                     `;
                 }
                 searchHistoryDiv.innerHTML = html || '<p>検索履歴はありません</p>';
+
+                // 再利用ボタンのイベントリスナーを設定
+                document.querySelectorAll('.reuse-btn').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const searchText = this.getAttribute('data-search-text');
+                        document.getElementById('search_text').value = searchText;
+                        searchBtn.textContent = '🔍 検索';
+                    });
+                });
             }
         } catch (error) {
             console.error('検索履歴の読み込みに失敗:', error);
         }
     }
-
-    window.reuseSearch = function(searchText) {
-        document.getElementById('search_text').value = searchText;
-        searchBtn.textContent = '🔍 再検索';
-    };
 });
 
 function startSearch() {

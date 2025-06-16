@@ -92,7 +92,8 @@ class WebTextSearcher:
                 'success': True,
                 'results': results,
                 'total_visited': len(self.visited_urls),
-                'skipped_urls': len(self.visited_urls) if skip_visited else 0
+                'skipped_urls': len(self.visited_urls) if skip_visited else 0,
+                'all_urls': list(self.visited_urls)  # 検索済みURLの一覧を返す
             }
         except Exception as e:
             print(f"検索中にエラー: {str(e)}")
@@ -132,6 +133,7 @@ class WebTextSearcher:
             # ページの検索結果を格納
             page_results = {
                 'url': url,
+                'title': soup.find('title').get_text() if soup.find('title') else url,
                 'body_matches': [],
                 'head_matches': [],
                 'href_matches': []
