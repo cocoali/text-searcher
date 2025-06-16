@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         html += `
                             <div class="result-item">
                                 <h3><a href="${result.url}" target="_blank">${result.title}</a></h3>
-                                <p>マッチ数: ${result.matches}</p>
+                                <p>マッチ数: ${result.matches ?? 0}</p>
                                 ${result.snippets.map(snippet => `<div class="snippet">${snippet}</div>`).join('')}
                             </div>
                         `;
@@ -348,7 +348,7 @@ function startSearch() {
             <div class="result-item">
                 <h3><a href="${result.url}" target="_blank">${result.title}</a></h3>
                 <p class="url">${result.url}</p>
-                <p class="matches">マッチ数: ${result.matches}</p>
+                <p class="matches">マッチ数: ${result.matches ?? 0}</p>
                 <div class="snippets">
                     ${result.snippets.map(snippet => `<p class="snippet">${snippet}</p>`).join('')}
                 </div>

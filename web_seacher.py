@@ -119,7 +119,7 @@ class WebTextSearcher:
                 self.results.append({
                     'url': url,
                     'title': page_title.strip(),
-                    'matches': len(matches),
+                    'matches': int(len(matches)) if matches is not None else 0,
                     'snippets': context_snippets[:3]
                 })
             
