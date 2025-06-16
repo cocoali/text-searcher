@@ -308,10 +308,10 @@ def search():
             formatted_results = []
             for result in results['results']:
                 formatted_results.append({
-                    'url': result['url'],
-                    'title': result['title'],
-                    'matches': result['matches'],
-                    'snippets': result['snippets']
+                    'url': result.get('url', ''),
+                    'title': result.get('title', ''),
+                    'matches': int(result.get('matches', 0)),
+                    'snippets': result.get('snippets', [])
                 })
             
             # 検索履歴に追加
