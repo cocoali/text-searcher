@@ -309,33 +309,39 @@ def search():
         if results['success']:
             # 検索結果を整形
             formatted_results = []
-            for result in results['results']:
+            for result in results.get('results', []):
                 match_count = 0
-                if 'body_matches' in result and result['body_matches']:
-                    match_count += len(result['body_matches'])
-                if 'head_matches' in result and result['head_matches']:
-                    match_count += len(result['head_matches'])
-                if 'href_matches' in result and result['href_matches']:
-                    match_count += len(result['href_matches'])
+                body_matches = result.get('body_matches', [])
+                head_matches = result.get('head_matches', [])
+                href_matches = result.get('href_matches', [])
+                
+                if body_matches:
+                    match_count += len(body_matches)
+                if head_matches:
+                    match_count += len(head_matches)
+                if href_matches:
+                    match_count += len(href_matches)
+                
                 snippets = []
-                if 'body_matches' in result and result['body_matches']:
-                    snippets.extend(result['body_matches'])
-                if 'head_matches' in result and result['head_matches']:
-                    snippets.extend(result['head_matches'])
+                if body_matches:
+                    snippets.extend(body_matches)
+                if head_matches:
+                    snippets.extend(head_matches)
+                
                 # href_matchesの各要素が辞書であることを保証し、リンクテキストとURLをセット
                 href_snippets = []
-                if 'href_matches' in result and result['href_matches']:
-                    for h in result['href_matches']:
-                        if isinstance(h, dict):
-                            text = h.get('text', h.get('original_url', ''))
-                            url = h.get('original_url', h.get('href', ''))
-                            href_snippets.append({'text': text, 'url': url})
+                for h in href_matches:
+                    if isinstance(h, dict):
+                        text = h.get('text', '')
+                        url = h.get('original_url', h.get('href', ''))
+                        href_snippets.append({'text': text, 'url': url})
+                
                 formatted_results.append({
                     'url': result.get('url', ''),
                     'title': result.get('title', '') or result.get('url', ''),
                     'matches': match_count,
-                    'body_matches': result.get('body_matches', []),
-                    'head_matches': result.get('head_matches', []),
+                    'body_matches': body_matches,
+                    'head_matches': head_matches,
                     'href_matches': href_snippets,
                     'snippets': snippets
                 })
@@ -345,7 +351,7 @@ def search():
                 'search_text': search_text,
                 'base_url': url,
                 'results': formatted_results,
-                'total_urls': results['total_pages'],
+                'total_urls': results.get('total_pages', 0),
                 'total_results': len(formatted_results),
                 'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                 'is_research': is_research
