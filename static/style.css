@@ -584,3 +584,24 @@ mark {
   border-radius: 8px;
   color: #666;
 }
+
+.search-stats {
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+}
+
+.search-stats p {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.search-stats p:first-child {
+  color: #4a90e2;
+  font-weight: bold;
+}

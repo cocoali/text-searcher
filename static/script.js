@@ -49,10 +49,17 @@ document.addEventListener('DOMContentLoaded', function () {
                     html += `<div class="info">前回の検索でスキップされた${data.skipped_count}件のURLを検索しました。</div>`;
                 }
                 
+                // 検索統計情報を表示
+                html += `
+                    <div class="search-stats">
+                        <p>検索対象URL数: ${data.total_pages}件</p>
+                        <p>検索結果数: ${data.results.length}件</p>
+                    </div>
+                `;
+                
                 if (data.results.length === 0) {
                     html += '<div class="no-results">検索結果が見つかりませんでした。</div>';
                 } else {
-                    html += `<div class="results-summary">検索結果: ${data.results.length}件</div>`;
                     data.results.forEach(result => {
                         html += `
                             <div class="result-item">
