@@ -291,16 +291,22 @@ def search():
     
     try:
         # 検索履歴を読み込む
+        history = []
         try:
             with open('search_history.json', 'r', encoding='utf-8') as f:
                 history = json.load(f)
-        except FileNotFoundError:
+                if not isinstance(history, list):
+                    history = []
+        except (FileNotFoundError, json.JSONDecodeError):
             history = []
         
         # 前回の検索結果を取得
         previous_results = None
-        if is_research and history and isinstance(history, list) and len(history) > 0:
-            previous_results = history[0]  # 最新の検索結果
+        if is_research and history and len(history) > 0:
+            try:
+                previous_results = history[0]  # 最新の検索結果
+            except (IndexError, TypeError):
+                previous_results = None
         
         # 検索を実行
         searcher = WebTextSearcher()
