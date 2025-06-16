@@ -20,6 +20,8 @@ class WebTextSearcher:
         self.max_urls = 100
         self.timeout = 20
         self.batch_size = 10
+        self.common_content = set()  # 共通コンテンツを保存するセット
+        self.common_content_threshold = 0.7  # 共通コンテンツと判定する閾値
         
     def search(self, base_url, search_text, progress_callback=None):
         """メインの検索関数"""
@@ -79,13 +81,29 @@ class WebTextSearcher:
             
             soup = BeautifulSoup(response.text, 'html.parser')
             
+            # ヘッダー、フッター、サイドバーなどの共通コンテンツを除去
+            for tag in soup.find_all(['header', 'footer', 'nav', 'aside']):
+                tag.decompose()
+            
             # JavaScriptやCSSを除去
             for script in soup(["script", "style"]):
                 script.decompose()
             
+            # メインコンテンツを抽出
+            main_content = self._extract_main_content(soup)
+            if not main_content:
+                return
+                
             # テキストを抽出
-            text_content = soup.get_text()
+            text_content = main_content.get_text()
             clean_text = re.sub(r'\s+', ' ', text_content).strip()
+            
+            # 共通コンテンツかどうかをチェック
+            if self._is_common_content(clean_text):
+                return
+                
+            # 新しい共通コンテンツとして保存
+            self.common_content.add(clean_text)
             
             # 検索テキストをチェック
             matches = self._find_matches(clean_text, search_text)
@@ -152,3 +170,45 @@ class WebTextSearcher:
                 links.append(full_url)
         
         return list(set(links))  # 重複を除去
+    
+    def _is_common_content(self, text):
+        """テキストが共通コンテンツかどうかを判定"""
+        if not text.strip():
+            return True
+            
+        # 既存の共通コンテンツと比較
+        for common in self.common_content:
+            if self._calculate_similarity(text, common) > self.common_content_threshold:
+                return True
+        return False
+        
+    def _calculate_similarity(self, text1, text2):
+        """2つのテキストの類似度を計算（簡易版）"""
+        # テキストを単語に分割
+        words1 = set(text1.lower().split())
+        words2 = set(text2.lower().split())
+        
+        # 共通の単語数を計算
+        common_words = words1.intersection(words2)
+        
+        # 類似度を計算（Jaccard係数）
+        if not words1 or not words2:
+            return 0
+        return len(common_words) / len(words1.union(words2))
+        
+    def _extract_main_content(self, soup):
+        """メインコンテンツを抽出"""
+        # 一般的なメインコンテンツのセレクタ
+        main_selectors = [
+            'main', 'article', '.main-content', '#main-content',
+            '.content', '#content', '.post', '.article'
+        ]
+        
+        # メインコンテンツを探す
+        for selector in main_selectors:
+            main_content = soup.select_one(selector)
+            if main_content:
+                return main_content
+                
+        # メインコンテンツが見つからない場合はbody全体を使用
+        return soup.body
