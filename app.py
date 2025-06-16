@@ -342,10 +342,20 @@ def search():
             with open('search_history.json', 'w', encoding='utf-8') as f:
                 json.dump(history[:10], f, ensure_ascii=False, indent=2)
             
+            # resultsがdictでなければ空dictに
+            if not isinstance(results, dict):
+                results = {}
+
+            total_pages = 0
+            try:
+                total_pages = int(results.get('total_pages', 0))
+            except Exception:
+                total_pages = 0
+
             return jsonify({
                 'success': True,
                 'results': formatted_results,
-                'total_pages': int(results['total_pages']) if 'total_pages' in results and results['total_pages'] is not None else 0,
+                'total_pages': total_pages,
                 'total_results': len(formatted_results),
                 'is_research': is_research,
                 'skipped_urls': history_entry.get('skipped_urls', []),
