@@ -304,11 +304,25 @@ def search():
             # 検索結果を整形
             formatted_results = []
             for result in results['results']:
+                match_count = 0
+                if 'body_matches' in result and result['body_matches']:
+                    match_count += len(result['body_matches'])
+                if 'head_matches' in result and result['head_matches']:
+                    match_count += len(result['head_matches'])
+                if 'href_matches' in result and result['href_matches']:
+                    match_count += len(result['href_matches'])
+                snippets = []
+                if 'body_matches' in result and result['body_matches']:
+                    snippets.extend(result['body_matches'])
+                if 'head_matches' in result and result['head_matches']:
+                    snippets.extend(result['head_matches'])
+                if 'href_matches' in result and result['href_matches']:
+                    snippets.extend([h['text'] for h in result['href_matches'] if 'text' in h])
                 formatted_results.append({
                     'url': result.get('url', ''),
                     'title': result.get('title', ''),
-                    'matches': int(result.get('matches', 0)),
-                    'snippets': result.get('snippets', [])
+                    'matches': match_count,
+                    'snippets': snippets
                 })
             
             # 検索履歴に追加
