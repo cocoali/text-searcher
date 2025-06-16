@@ -345,7 +345,7 @@ def search():
             return jsonify({
                 'success': True,
                 'results': formatted_results,
-                'total_pages': results.get('total_pages', 0),
+                'total_pages': int(results['total_pages']) if 'total_pages' in results and results['total_pages'] is not None else 0,
                 'total_results': len(formatted_results),
                 'is_research': is_research,
                 'skipped_urls': history_entry.get('skipped_urls', []),
