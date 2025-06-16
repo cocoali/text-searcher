@@ -62,13 +62,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     data.results.forEach(result => {
                         html += `<div class="result-item">`;
                         html += `<h3><a href="${result.url}" target="_blank">${result.title || result.url}</a></h3>`;
-                        if (result.snippets && result.snippets.length > 0) {
-                            html += `<div class="snippets">`;
-                            result.snippets.forEach(snippet => {
-                                html += `<div class="snippet">${snippet}</div>`;
-                            });
-                            html += `</div>`;
-                        }
+                        html += `<p class="url">${result.url}</p>`;
                         if (result.body_matches && result.body_matches.length > 0) {
                             html += '<div class="result-section body-matches"><h4>本文の一致</h4>';
                             result.body_matches.forEach(match => {
@@ -86,7 +80,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         if (result.href_matches && result.href_matches.length > 0) {
                             html += '<div class="result-section href-matches"><h4>リンクの一致</h4>';
                             result.href_matches.forEach(match => {
-                                html += `<div class="match"><a href="${match.original_url}" target="_blank">${match.text || match.original_url}</a></div>`;
+                                html += `<div class="match"><a href="${match.url}" target="_blank">${match.text || match.url}</a></div>`;
                             });
                             html += '</div>';
                         }

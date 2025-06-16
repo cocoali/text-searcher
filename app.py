@@ -322,12 +322,21 @@ def search():
                     snippets.extend(result['body_matches'])
                 if 'head_matches' in result and result['head_matches']:
                     snippets.extend(result['head_matches'])
+                # href_matchesの各要素が辞書であることを保証し、リンクテキストとURLをセット
+                href_snippets = []
                 if 'href_matches' in result and result['href_matches']:
-                    snippets.extend([h['text'] for h in result['href_matches'] if 'text' in h])
+                    for h in result['href_matches']:
+                        if isinstance(h, dict):
+                            text = h.get('text', h.get('original_url', ''))
+                            url = h.get('original_url', h.get('href', ''))
+                            href_snippets.append({'text': text, 'url': url})
                 formatted_results.append({
                     'url': result.get('url', ''),
-                    'title': result.get('title', ''),
+                    'title': result.get('title', '') or result.get('url', ''),
                     'matches': match_count,
+                    'body_matches': result.get('body_matches', []),
+                    'head_matches': result.get('head_matches', []),
+                    'href_matches': href_snippets,
                     'snippets': snippets
                 })
             
