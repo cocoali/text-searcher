@@ -156,10 +156,7 @@ class WebTextSearcher:
             return {
                 'success': True,
                 'results': results,
-                'total_visited': len(self.visited_urls),
-                'skipped_urls': len(self.visited_urls) if skip_visited else 0,
-                'all_urls': list(self.visited_urls),
-                'history': self.search_history[search_text]  # 検索履歴も返す
+                'total_pages': len(self.visited_urls)
             }
         except Exception as e:
             print(f"検索中にエラー: {str(e)}")
