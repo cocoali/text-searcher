@@ -17,18 +17,20 @@ app.config['SESSION_COOKIE_SECURE'] = os.environ.get('FLASK_ENV') == 'production
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['PERMANENT_SESSION_LIFETIME'] = 1800  # 30分
 
-# レート制限の設定
+# レート制限の設定（Redis未使用の警告を回避）
 limiter = Limiter(
     app=app,
     key_func=get_remote_address,
-    default_limits=["100 per hour", "10 per minute"]
+    default_limits=["100 per hour", "10 per minute"],
+    storage_uri="memory://"
 )
 
 class WebTextSearcher:
     def __init__(self):
-        self.timeout = 10
+        self.timeout = 30  # タイムアウトを30秒に延長
         self.visited_urls = set()
-        self.max_depth = 2  # 最大検索深度
+        self.max_depth = 1  # 検索深度を1に制限してパフォーマンス向上
+        self.max_pages = 10  # 最大ページ数を制限
 
     def _highlight_text(self, text, search_text):
         """検索テキストをハイライト表示"""
@@ -66,7 +68,9 @@ class WebTextSearcher:
         if results is None:
             results = []
             
-        if url in self.visited_urls or depth > self.max_depth:
+        if (url in self.visited_urls or 
+            depth > self.max_depth or 
+            len(self.visited_urls) >= self.max_pages):
             return
             
         self.visited_urls.add(url)
