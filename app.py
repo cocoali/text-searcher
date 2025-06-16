@@ -240,6 +240,27 @@ def search():
     print(f"検索結果: {result}")
     return jsonify(result)
 
+@app.route('/search_history', methods=['GET'])
+def get_search_history():
+    """検索履歴を取得"""
+    try:
+        if os.path.exists('search_history.json'):
+            with open('search_history.json', 'r', encoding='utf-8') as f:
+                history = json.load(f)
+            return jsonify({
+                'success': True,
+                'history': history
+            })
+        return jsonify({
+            'success': True,
+            'history': {}
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
 @app.errorhandler(429)
 def ratelimit_handler(e):
     return jsonify({

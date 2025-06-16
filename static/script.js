@@ -5,6 +5,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const searchBtn = document.getElementById('searchBtn');
     const spinner = document.getElementById('loadingSpinner');
     const loadingDiv = document.getElementById('loading');
+    const searchHistoryDiv = document.getElementById('searchHistory');
+    let currentSearchText = '';
+
+    // 検索履歴を読み込む
+    loadSearchHistory();
 
     searchForm.addEventListener('submit', async function (e) {
         e.preventDefault();
@@ -14,13 +19,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const username = document.getElementById('username').value;
         const password = document.getElementById('password').value;
 
-        const resultsDiv = document.getElementById('results');
-        const loadingDiv = document.getElementById('loading');
-        const searchBtn = document.getElementById('searchBtn');
-
-        // 入力値の検証
         if (!url || !searchText) {
-            resultsDiv.innerHTML = '<p class="error">URLと検索テキストは必須です。</p>';
+            alert('URLと検索テキストを入力してください');
             return;
         }
 
@@ -45,11 +45,15 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             const data = await response.json();
+            currentSearchText = searchText;
 
             if (data.success) {
                 let html = '<h2>検索結果</h2>';
                 if (data.skipped_urls > 0) {
                     html += `<p class="search-info">既に検索済みのURL数: ${data.skipped_urls}</p>`;
+                    searchBtn.textContent = '🔍 再検索';
+                } else {
+                    searchBtn.textContent = '🔍 検索';
                 }
                 html += `<p class="search-info">今回検索したURL数: ${data.total_visited - data.skipped_urls}</p>`;
                 html += `<p class="search-info">合計検索URL数: ${data.total_visited}</p>`;
@@ -91,11 +95,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 resultsDiv.innerHTML = html;
             } else {
-                resultsDiv.innerHTML = `<p class="error">エラー: ${data.error}</p>`;
+                resultsDiv.innerHTML = `<div class="error">エラー: ${data.error}</div>`;
             }
         } catch (error) {
             console.error('エラー発生:', error);
-            resultsDiv.innerHTML = `<p class="error">エラーが発生しました: ${error.message}</p>`;
+            resultsDiv.innerHTML = `<div class="error">エラーが発生しました: ${error.message}</div>`;
         } finally {
             loadingDiv.style.display = 'none';
             searchBtn.disabled = false;
@@ -244,6 +248,34 @@ document.addEventListener('DOMContentLoaded', function () {
             return false;
         }
     }
+
+    async function loadSearchHistory() {
+        try {
+            const response = await fetch('/search_history');
+            const data = await response.json();
+            
+            if (data.success) {
+                let html = '';
+                for (const [searchText, urls] of Object.entries(data.history)) {
+                    html += `
+                        <div class="history-item">
+                            <h3>検索テキスト: ${searchText}</h3>
+                            <p>検索済みURL数: ${urls.length}</p>
+                            <button onclick="reuseSearch('${searchText}')" class="reuse-btn">この検索を再利用</button>
+                        </div>
+                    `;
+                }
+                searchHistoryDiv.innerHTML = html || '<p>検索履歴はありません</p>';
+            }
+        } catch (error) {
+            console.error('検索履歴の読み込みに失敗:', error);
+        }
+    }
+
+    window.reuseSearch = function(searchText) {
+        document.getElementById('search_text').value = searchText;
+        searchBtn.textContent = '🔍 再検索';
+    };
 });
 
 function startSearch() {
