@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, redirect, url_for, session
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
@@ -9,23 +9,62 @@ from flask_limiter.util import get_remote_address
 import base64
 import os
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
+from functools import wraps
 
 app = Flask(__name__)
+app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')  # 本番環境では環境変数から取得
 
-# セキュリティ設定
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-here')
-app.config['SESSION_COOKIE_SECURE'] = os.environ.get('FLASK_ENV') == 'production'
-app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['PERMANENT_SESSION_LIFETIME'] = 1800  # 30分
-
-# レート制限の設定（Redis未使用の警告を回避）
+# レート制限の設定
 limiter = Limiter(
     app=app,
     key_func=get_remote_address,
-    default_limits=["100 per hour", "10 per minute"],
-    storage_uri="memory://"
+    default_limits=["100 per hour", "10 per minute"]
 )
+
+# ユーザー認証用のデコレータ
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# ユーザー情報（本番環境ではデータベースを使用することを推奨）
+USERS = {
+    'admin': {
+        'password': 'admin123',  # 本番環境ではハッシュ化したパスワードを使用
+        'name': '管理者'
+    }
+}
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        if username in USERS and USERS[username]['password'] == password:
+            session['user'] = {
+                'username': username,
+                'name': USERS[username]['name']
+            }
+            return redirect(url_for('index'))
+        
+        return render_template('login.html', error='ユーザー名またはパスワードが正しくありません')
+    
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.pop('user', None)
+    return redirect(url_for('login'))
+
+@app.route('/')
+@login_required
+def index():
+    return render_template('index.html', user=session['user'])
 
 class WebTextSearcher:
     def __init__(self):
@@ -76,7 +115,7 @@ class WebTextSearcher:
         
         # 検索履歴から既に検索済みのURLを取得
         if skip_visited and search_text in self.search_history:
-            self.visited_urls.update(self.search_history[search_text])
+            self.visited_urls.update(self.search_history[search_text]['urls'])
             print(f"既に検索済みのURL数: {len(self.visited_urls)}")
         
         try:
@@ -84,8 +123,20 @@ class WebTextSearcher:
             
             # 検索履歴を更新
             if search_text not in self.search_history:
-                self.search_history[search_text] = []
-            self.search_history[search_text].extend(list(self.visited_urls))
+                self.search_history[search_text] = {
+                    'urls': [],
+                    'results': [],
+                    'last_updated': datetime.now().isoformat()
+                }
+            
+            # 新しい結果を追加
+            self.search_history[search_text]['urls'].extend(list(self.visited_urls))
+            self.search_history[search_text]['results'].extend(results)
+            self.search_history[search_text]['last_updated'] = datetime.now().isoformat()
+            
+            # 重複を除去
+            self.search_history[search_text]['urls'] = list(set(self.search_history[search_text]['urls']))
+            
             self.save_history()
             
             return {
@@ -93,7 +144,8 @@ class WebTextSearcher:
                 'results': results,
                 'total_visited': len(self.visited_urls),
                 'skipped_urls': len(self.visited_urls) if skip_visited else 0,
-                'all_urls': list(self.visited_urls)  # 検索済みURLの一覧を返す
+                'all_urls': list(self.visited_urls),
+                'history': self.search_history[search_text]  # 検索履歴も返す
             }
         except Exception as e:
             print(f"検索中にエラー: {str(e)}")
@@ -208,12 +260,9 @@ class WebTextSearcher:
         except Exception as e:
             print(f"ページの検索中にエラー: {url} - {str(e)}")
 
-@app.route('/')
-def index():
-    return render_template('index.html')
-
 @app.route('/search', methods=['POST'])
-@limiter.limit("10 per minute")  # エンドポイントごとの制限
+@login_required
+@limiter.limit("10 per minute")
 def search():
     print("検索リクエストを受信")
     url = request.form.get('url')
@@ -243,6 +292,7 @@ def search():
     return jsonify(result)
 
 @app.route('/search_history', methods=['GET'])
+@login_required
 def get_search_history():
     """検索履歴を取得"""
     try:

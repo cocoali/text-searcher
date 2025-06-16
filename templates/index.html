@@ -10,7 +10,10 @@
 
 <body>
     <div class="container">
-        <h1>ウェブテキスト検索</h1>
+        <div class="header">
+            <h1>ウェブテキスト検索</h1>
+            <a href="{{ url_for('logout') }}" class="logout-btn">ログアウト</a>
+        </div>
 
         <form id="searchForm">
             <div class="form-group">

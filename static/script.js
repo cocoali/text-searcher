@@ -98,6 +98,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     });
                 }
                 resultsDiv.innerHTML = html;
+
+                // 検索履歴を更新
+                if (data.history) {
+                    updateSearchHistory(data.history, searchText);
+                }
             } else {
                 resultsDiv.innerHTML = `<div class="error">エラー: ${data.error}</div>`;
             }
@@ -259,30 +264,74 @@ document.addEventListener('DOMContentLoaded', function () {
             const data = await response.json();
             
             if (data.success) {
-                let html = '';
-                for (const [searchText, urls] of Object.entries(data.history)) {
-                    html += `
-                        <div class="history-item">
-                            <h3>検索テキスト: ${searchText}</h3>
-                            <p>検索済みURL数: ${urls.length}</p>
-                            <button class="reuse-btn" data-search-text="${searchText}">この検索を再利用</button>
-                        </div>
-                    `;
-                }
-                searchHistoryDiv.innerHTML = html || '<p>検索履歴はありません</p>';
-
-                // 再利用ボタンのイベントリスナーを設定
-                document.querySelectorAll('.reuse-btn').forEach(button => {
-                    button.addEventListener('click', function() {
-                        const searchText = this.getAttribute('data-search-text');
-                        document.getElementById('search_text').value = searchText;
-                        searchBtn.textContent = '🔍 検索';
-                    });
-                });
+                displaySearchHistory(data.history);
             }
         } catch (error) {
             console.error('検索履歴の読み込みに失敗:', error);
         }
+    }
+
+    function updateSearchHistory(history, searchText) {
+        const historyData = {};
+        historyData[searchText] = history;
+        displaySearchHistory(historyData);
+    }
+
+    function displaySearchHistory(history) {
+        let html = '';
+        for (const [searchText, data] of Object.entries(history)) {
+            const lastUpdated = new Date(data.last_updated).toLocaleString();
+            html += `
+                <div class="history-item">
+                    <h3>検索テキスト: ${searchText}</h3>
+                    <p>検索済みURL数: ${data.urls.length}</p>
+                    <p>最終更新: ${lastUpdated}</p>
+                    <button class="reuse-btn" data-search-text="${searchText}">この検索を再利用</button>
+                    <div class="history-results">
+                        <h4>検索結果</h4>
+                        ${data.results.map(result => `
+                            <div class="history-result-item">
+                                <h5><a href="${result.url}" target="_blank">${result.title || result.url}</a></h5>
+                                <p class="url">${result.url}</p>
+                                ${result.body_matches.length > 0 ? `
+                                    <div class="result-section body-matches">
+                                        <h6>本文の一致</h6>
+                                        ${result.body_matches.map(match => `<div class="match">${match}</div>`).join('')}
+                                    </div>
+                                ` : ''}
+                                ${result.head_matches.length > 0 ? `
+                                    <div class="result-section head-matches">
+                                        <h6>ヘッダーの一致</h6>
+                                        ${result.head_matches.map(match => `<div class="match">${match}</div>`).join('')}
+                                    </div>
+                                ` : ''}
+                                ${result.href_matches.length > 0 ? `
+                                    <div class="result-section href-matches">
+                                        <h6>リンクの一致</h6>
+                                        ${result.href_matches.map(match => `
+                                            <div class="href-match">
+                                                <div class="link-text">${match.text}</div>
+                                                <a href="${match.href}" target="_blank">${match.href}</a>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        searchHistoryDiv.innerHTML = html || '<p>検索履歴はありません</p>';
+
+        // 再利用ボタンのイベントリスナーを設定
+        document.querySelectorAll('.reuse-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const searchText = this.getAttribute('data-search-text');
+                document.getElementById('search_text').value = searchText;
+                searchBtn.textContent = '🔍 検索';
+            });
+        });
     }
 });
 
