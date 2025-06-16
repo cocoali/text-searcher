@@ -13,23 +13,28 @@ from datetime import datetime, timedelta
 from functools import wraps
 import hashlib
 import redis
+from dotenv import load_dotenv
+
+# 環境変数の読み込み
+load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)  # セッション用の秘密鍵
+app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))
 
 # Redisの設定
-redis_client = redis.Redis(host='localhost', port=6379, db=0)
+redis_url = os.environ.get('REDIS_URL', 'redis://localhost:6379')
+redis_client = redis.from_url(redis_url)
 
 # レート制限の設定
 limiter = Limiter(
     app=app,
     key_func=get_remote_address,
-    storage_uri="redis://localhost:6379",
+    storage_uri=redis_url,
     default_limits=["200 per day", "50 per hour"]
 )
 
 # タイムアウトを設定
-app.config['TIMEOUT'] = 120
+app.config['TIMEOUT'] = int(os.environ.get('TIMEOUT', 120))
 
 # ユーザー認証用のデコレータ
 def login_required(f):

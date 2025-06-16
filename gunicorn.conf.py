@@ -1,8 +1,17 @@
-# Gunicorn設定ファイル
-bind = "0.0.0.0:8000"
-workers = 4
-timeout = 120  # タイムアウトを120秒に設定
+import os
+
+# 環境変数からポート番号を取得
+port = os.environ.get('PORT', '8000')
+bind = f"0.0.0.0:{port}"
+
+# ワーカー設定
+workers = int(os.environ.get('WEB_CONCURRENCY', 4))
+timeout = int(os.environ.get('TIMEOUT', 120))
 worker_class = "sync"
 keepalive = 5
 max_requests = 1000
-max_requests_jitter = 50 
+max_requests_jitter = 50
+
+# ログ設定
+accesslog = '-'
+errorlog = '-' 
