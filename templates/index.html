@@ -12,7 +12,10 @@
     <div class="container">
         <div class="header">
             <h1>ウェブテキスト検索</h1>
-            <a href="{{ url_for('logout') }}" class="logout-btn">ログアウト</a>
+            <div class="nav-links">
+                <a href="{{ url_for('history') }}" class="nav-btn">検索履歴</a>
+                <a href="{{ url_for('logout') }}" class="logout-btn">ログアウト</a>
+            </div>
         </div>
 
         <form id="searchForm">

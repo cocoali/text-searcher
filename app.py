@@ -65,6 +65,21 @@ def logout():
 def index():
     return render_template('index.html', user=session['user'])
 
+@app.route('/history')
+@login_required
+def history():
+    """検索履歴ページを表示"""
+    try:
+        with open('search_history.json', 'r', encoding='utf-8') as f:
+            history = json.load(f)
+    except FileNotFoundError:
+        history = []
+    
+    # 履歴を日時でソート（新しい順）
+    history.sort(key=lambda x: x.get('last_updated', ''), reverse=True)
+    
+    return render_template('history.html', history=history)
+
 class WebTextSearcher:
     def __init__(self):
         self.timeout = 10
