@@ -12,16 +12,24 @@ import json
 from datetime import datetime, timedelta
 from functools import wraps
 import hashlib
+import redis
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # セッション用の秘密鍵
+
+# Redisの設定
+redis_client = redis.Redis(host='localhost', port=6379, db=0)
 
 # レート制限の設定
 limiter = Limiter(
     app=app,
     key_func=get_remote_address,
+    storage_uri="redis://localhost:6379",
     default_limits=["200 per day", "50 per hour"]
 )
+
+# タイムアウトを設定
+app.config['TIMEOUT'] = 120
 
 # ユーザー認証用のデコレータ
 def login_required(f):

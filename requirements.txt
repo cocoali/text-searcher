@@ -5,3 +5,4 @@ gunicorn==21.2.0
 python-dotenv==1.0.1
 flask-limiter==3.5.0
 lxml==4.9.3
+redis==5.0.1
