@@ -11,15 +11,16 @@ import os
 import json
 from datetime import datetime, timedelta
 from functools import wraps
+import hashlib
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')  # 本番環境では環境変数から取得
+app.secret_key = os.urandom(24)  # セッション用の秘密鍵
 
 # レート制限の設定
 limiter = Limiter(
     app=app,
     key_func=get_remote_address,
-    default_limits=["100 per hour", "10 per minute"]
+    default_limits=["200 per day", "50 per hour"]
 )
 
 # ユーザー認証用のデコレータ
@@ -33,26 +34,24 @@ def login_required(f):
 
 # ユーザー情報（本番環境ではデータベースを使用することを推奨）
 USERS = {
-    'admin': {
-        'password': 'admin123',  # 本番環境ではハッシュ化したパスワードを使用
-        'name': '管理者'
-    }
+    'admin': 'b65fe679c5abc007b55e3dfd28b782d5b9b2cc75fa739ccda4e751fa35e7a905378e05edf99169596f73864d545fdcf5f638f9d9e847bc8c2e3d6626318d0e31'  # 'password123'のSHA512ハッシュ値
 }
 
 @app.route('/login', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
 def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
         
-        if username in USERS and USERS[username]['password'] == password:
-            session['user'] = {
-                'username': username,
-                'name': USERS[username]['name']
-            }
-            return redirect(url_for('index'))
+        # パスワードのSHA512ハッシュを計算
+        password_hash = hashlib.sha512(password.encode()).hexdigest()
         
-        return render_template('login.html', error='ユーザー名またはパスワードが正しくありません')
+        if username in USERS and USERS[username] == password_hash:
+            session['user'] = username
+            return redirect(url_for('index'))
+        else:
+            return render_template('login.html', error='ユーザー名またはパスワードが正しくありません。')
     
     return render_template('login.html')
 
