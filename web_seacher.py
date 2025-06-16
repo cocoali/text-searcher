@@ -16,9 +16,10 @@ class WebTextSearcher:
         self.visited_urls = set()
         self.results = []
         self.progress_callback = None
-        self.max_depth = 3
-        self.max_urls = 50
-        self.timeout = 10
+        self.max_depth = 4
+        self.max_urls = 100
+        self.timeout = 20
+        self.batch_size = 10
         
     def search(self, base_url, search_text, progress_callback=None):
         """メインの検索関数"""
@@ -27,7 +28,22 @@ class WebTextSearcher:
         self.progress_callback = progress_callback
         
         try:
-            self._crawl_and_search(base_url, search_text, 0, base_url)
+            # バッチ処理でクロール
+            urls_to_crawl = [base_url]
+            current_depth = 0
+            
+            while urls_to_crawl and current_depth <= self.max_depth:
+                batch = urls_to_crawl[:self.batch_size]
+                urls_to_crawl = urls_to_crawl[self.batch_size:]
+                
+                for url in batch:
+                    if len(self.visited_urls) >= self.max_urls:
+                        break
+                    self._crawl_and_search(url, search_text, current_depth, base_url)
+                
+                current_depth += 1
+                time.sleep(1)  # バッチ間の待機時間
+            
             return {
                 'success': True,
                 'results': self.results,
@@ -43,9 +59,7 @@ class WebTextSearcher:
     
     def _crawl_and_search(self, url, search_text, depth, base_domain):
         """再帰的にページをクロールして検索"""
-        if (depth > self.max_depth or 
-            len(self.visited_urls) >= self.max_urls or 
-            url in self.visited_urls or
+        if (url in self.visited_urls or
             not self._is_same_domain(url, base_domain)):
             return
         
@@ -88,15 +102,15 @@ class WebTextSearcher:
                     'url': url,
                     'title': page_title.strip(),
                     'matches': len(matches),
-                    'snippets': context_snippets[:3]  # 最大3つのスニペット
+                    'snippets': context_snippets[:3]
                 })
             
             # 次の階層のリンクを取得
             if depth < self.max_depth:
                 links = self._extract_links(soup, url)
-                for link in links[:10]:  # 各ページから最大10個のリンク
+                for link in links[:15]:
                     if len(self.visited_urls) < self.max_urls:
-                        time.sleep(0.1)  # レート制限
+                        time.sleep(0.1)
                         self._crawl_and_search(link, search_text, depth + 1, base_domain)
         
         except Exception as e:
