@@ -9,6 +9,14 @@ document.addEventListener('DOMContentLoaded', function () {
     let currentSearchText = '';
     let currentUrl = '';
 
+    // マッチ詳細の表示/非表示を切り替える関数
+    window.toggleMatches = function(element) {
+        const details = element.nextElementSibling;
+        const isHidden = details.style.display === 'none';
+        details.style.display = isHidden ? 'block' : 'none';
+        element.textContent = `マッチ数: ${element.textContent.split(':')[1].trim().split(' ')[0]} ${isHidden ? '▲' : '▼'}`;
+    };
+
     // 検索履歴を読み込む
     loadSearchHistory();
 
@@ -315,14 +323,6 @@ document.addEventListener('DOMContentLoaded', function () {
         
         // 検索を実行
         searchForm.dispatchEvent(new Event('submit'));
-    }
-
-    // マッチ詳細の表示/非表示を切り替える関数
-    function toggleMatches(element) {
-        const details = element.nextElementSibling;
-        const isHidden = details.style.display === 'none';
-        details.style.display = isHidden ? 'block' : 'none';
-        element.textContent = `マッチ数: ${element.textContent.split(':')[1].trim().split(' ')[0]} ${isHidden ? '▲' : '▼'}`;
     }
 });
 
