@@ -52,8 +52,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 // 検索統計情報を表示
                 html += `
                     <div class="search-stats">
-                        <p>検索対象URL数: ${data.total_pages}件</p>
-                        <p>検索結果数: ${data.results.length}件</p>
+                        <p>検索対象URL数: ${data.total_pages ?? 0}件</p>
+                        <p>検索結果数: ${data.results?.length ?? 0}件</p>
                     </div>
                 `;
                 
